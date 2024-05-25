@@ -1,7 +1,9 @@
 from openai import OpenAI
-import pygame
-import sounddevice as sd
-from scipy.io.wavfile import write
+import wave
+import sys
+import pyaudio
+from pydub import AudioSegment
+from pydub.playback import play
 from system_prompts import pharmacy
 
 
@@ -14,13 +16,32 @@ class Situation:
         self.response_settings = {"max_tokens": 100, "temperature": 0.4}
 
     @staticmethod
-    def record_audio(seconds, fs, channels):
-        recording = sd.rec(int(seconds * fs), samplerate=fs, channels=channels)
-        sd.wait()
-        write("output.wav", fs, recording)
+    def record_audio():
+        # record
+        CHUNK = 1024
+        FORMAT = pyaudio.paInt16
+        CHANNELS = 1 if sys.platform == 'darwin' else 2
+        RATE = 44100
+        RECORD_SECONDS = 5
+
+        with wave.open('user.wav', 'wb') as wf:
+            p = pyaudio.PyAudio()
+            wf.setnchannels(CHANNELS)
+            wf.setsampwidth(p.get_sample_size(FORMAT))
+            wf.setframerate(RATE)
+
+            stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True)
+
+            print('Recording...')
+            for _ in range(0, RATE // CHUNK * RECORD_SECONDS):
+                wf.writeframes(stream.read(CHUNK))
+            print('Done')
+
+            stream.close()
+            p.terminate()
 
     def get_transcript_of_user_voice(self):
-        with open("output.wav", "rb") as f:
+        with open("user.wav", "rb") as f:
             transcription = self.client.audio.transcriptions.create(
                 model=self.models.get("stt"),
                 file=f
@@ -40,53 +61,51 @@ class Situation:
         response = self.client.audio.speech.create(
             model=self.models.get("tts"),
             voice="alloy",
-            response_format="mp3",
+            response_format="wav",
             speed=1,
             input=response.choices[0].message.content
         )
 
-        response.stream_to_file("output.mp3")
+        response.stream_to_file("assistant.wav")
 
     @staticmethod
     def play_assistant_response() -> None:
-        pygame.init()
-        pygame.mixer.init()
-        with open("output.mp3") as f:
-            pygame.mixer.music.load(f)
-            pygame.mixer.music.play()
-            while pygame.mixer.music.get_busy():
-                pygame.time.Clock().tick(10)
+        sound = AudioSegment.from_wav('assistant.wav')
+        play(sound)
 
     def run(self):
         print("It's your turn")
 
-        while True:
+        user_content = ""
+        while user_content != "Finished.":
             # Get audio input from user
-            self.record_audio(3, 44100, 2)
+            self.record_audio()
 
             # Get the transcription of the user audio input
             user_content = self.get_transcript_of_user_voice()
 
-            # Compose the user message
-            user_message = {"role": "user", "content": user_content}
+            if user_content != "Finished":
 
-            # Add the user message to the chat history
-            self.chat_history.append(user_message)
+                # Compose the user message
+                user_message = {"role": "user", "content": user_content}
 
-            # Get a text response from the model
-            response = self.get_response_from_llm()
+                # Add the user message to the chat history
+                self.chat_history.append(user_message)
 
-            # Compose the assistant message
-            assistant_message = {"role": "assistant", "content": response.choices[0].message.content}
+                # Get a text response from the model
+                response = self.get_response_from_llm()
 
-            # Add the assistant message to the chat history
-            self.chat_history.append(assistant_message)
+                # Compose the assistant message
+                assistant_message = {"role": "assistant", "content": response.choices[0].message.content}
 
-            # Create speach from the assistant response
-            self.create_speach_from_assistant_response(response)
+                # Add the assistant message to the chat history
+                self.chat_history.append(assistant_message)
 
-            # Play the response
-            self.play_assistant_response()
+                # Create speach from the assistant response
+                self.create_speach_from_assistant_response(response)
+
+                # Play the response
+                self.play_assistant_response()
 
 
 i = Situation(pharmacy)
