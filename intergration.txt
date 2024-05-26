@@ -1,0 +1,16 @@
+# How we intergrate these libs and lösning components.
+Audio Capture: Capture the audio input from the user.
+Library: PyAudio  # capture 
+
+Speech Recognition: Convert the captured audio into text.
+Library: SpeechRecognition  # stt
+
+Natural Language Processing (NLP): Analyze the text to determine if it is a question and understand its intent.
+Library: spaCy  # need to investigate more
+
+
+Answer Generation: Generate a response to the question.
+Library: OpenAI's GPT or other LLMs
+
+Text-to-Speech: Convert the text response back into speech.
+Library: gTTS (Google Text-to-Speech)
