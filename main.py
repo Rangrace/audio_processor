@@ -24,9 +24,9 @@ class Situation:
         # The chat history, it gives the llm model a "memory" of what has been said
         self.chat_history = [{"role": "system", "content": self.system_content}]
         # The models used
-        self.models = {"tts": "tts-1", "stt": "whisper-1", "llm": "gpt-4-turbo"}
+        self.models = {"tts": "tts-1", "stt": "whisper-1", "llm": "gpt-4o"}
         # The response settings passed to the llm model
-        self.response_settings = {"max_tokens": 100, "temperature": 0.4}
+        self.response_settings = {"max_tokens": 300, "temperature": 0.2}
 
     @staticmethod
     def record_audio():
@@ -36,7 +36,7 @@ class Situation:
         FORMAT = pyaudio.paInt16
         CHANNELS = 1 if sys.platform == 'darwin' else 2
         RATE = 44100
-        RECORD_SECONDS = 5
+        RECORD_SECONDS = 6
 
         with wave.open('user.wav', 'wb') as wf:
             p = pyaudio.PyAudio()
@@ -75,15 +75,23 @@ class Situation:
         )
         return response
 
-    def create_speach_from_assistant_response(self, response) -> None:
+    def moderation(self, content):
+
+        response = self.client.moderations.create(input=content)
+
+        output = response.results[0]
+
+        return output.flagged
+
+    def create_speach_from_assistant_response(self, content) -> None:
         """Create a voice message from the llm response"""
 
         response = self.client.audio.speech.create(
             model=self.models.get("tts"),
-            voice="alloy",
+            voice="nova",
             response_format="wav",
             speed=1,
-            input=response.choices[0].message.content
+            input=content
         )
 
         response.stream_to_file("assistant.wav")
@@ -98,37 +106,41 @@ class Situation:
     def run(self):
         """The main loop. It plays as long as 'Finished' is not uttered by the user"""
 
-        print("It's your turn")
+        first_message = "Welcome! How can i help you?"
+        self.create_speach_from_assistant_response(first_message)
+        self.play_assistant_response()
+        self.chat_history.append({"role": "assistant", "content": first_message})
 
-        user_content = ""
-        while user_content != "Finished.":
+        while True:
             # Get audio input from user
             self.record_audio()
 
             # Get the transcription of the user audio input
             user_content = self.get_transcript_of_user_voice()
 
-            if user_content != "Finished":
-                # Compose the user message
-                user_message = {"role": "user", "content": user_content}
+            # Compose the user message
+            user_message = {"role": "user", "content": user_content}
 
-                # Add the user message to the chat history
-                self.chat_history.append(user_message)
+            # Add the user message to the chat history
+            self.chat_history.append(user_message)
 
-                # Get a text response from the model
-                response = self.get_response_from_llm()
+            # Get a text response from the model
+            response = self.get_response_from_llm()
 
-                # Compose the assistant message
-                assistant_message = {"role": "assistant", "content": response.choices[0].message.content}
+            # Moderation filter
+            result = self.moderation(response.choices[0].message.content)
 
-                # Add the assistant message to the chat history
-                self.chat_history.append(assistant_message)
+            # Compose the assistant message
+            assistant_message = {"role": "assistant", "content": response.choices[0].message.content}
 
-                # Create speach from the assistant response
-                self.create_speach_from_assistant_response(response)
+            # Add the assistant message to the chat history
+            self.chat_history.append(assistant_message)
 
-                # Play the response
-                self.play_assistant_response()
+            # Create speach from the assistant response
+            self.create_speach_from_assistant_response(response.choices[0].message.content)
+
+            # Play the response
+            self.play_assistant_response()
 
 
 i = Situation(pharmacy)

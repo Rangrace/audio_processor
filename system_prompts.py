@@ -1,47 +1,78 @@
-from person import PharmacyCustomer
+from models import Person, Prescription, Drug, Task, Stock
 
 # Pharmacy
-pharmacy_customer = PharmacyCustomer("Christian Persson", 8006214657, {"prescription": "Sertralin Teva, 50 milligram, divisible"})
-medicin_for_example = "Sertralin Teva, 50 milligram, divisible"
-alternative_for_example = "Sertralin Sun, 50 milligram, divisible"
+
+# Information about the customer
+person = Person("Christian Persson", "8006214657")
+
+# The drug the customer wants to buy
+drug1 = Drug("Sertraline", 50, "Bluefish")
+
+# Alternative drug
+drug2 = Drug("Sertraline", 50, "Teva")
+
+# The prescription that the customer's doctor has made
+prescription = Prescription(f"{drug1.name} {drug1.brand}, {drug1.dosage}", "1.5 pill every morning", 4)
+
+# The stock
+stock = Stock()
+stock.add(f"{drug1.name} {drug1.brand}, {drug1.dosage}", [("qty", 4), ("price", "8 pound")])
+stock.add(f"{drug2.name} {drug2.brand}, {drug2.dosage}", [("qty", 0), ("price", "7 pound")])
+stock.add(f"Bag", [("qty", 200), ("price", "1 pound")])
+
+# The tasks the assistant will perform
+task1 = Task("Initial reception")
+task1.add_step("Ask what the customer wants from you")
+
+task2 = Task("Check the customers prescriptions")
+task2.add_step("Prompt the customer to provide his/her personal number")
+task2.add_step(f"If the personal nr the customer provided is: {person.personal_nr}, proceed to check the prescriptions")
+
+task3 = Task("Confirmation")
+task3.add_step("Prompt the customer to confirm that it is the right prescription")
+
+task4 = Task("Check the availability")
+task4.add_step("Look in your stock to see if the required drug is available")
+
+task5 = Task("Inform")
+task5.add_step("Inform the customer about usage")
+task5.add_step("Put a label on the package with info about usage")
+
+task6 = Task("Charge")
+task6.add_step("Ask if the customer wants a bag")
+task6.add_step("Calculate the grand total")
+task6.add_step("Point the customer to the card terminal")
 
 pharmacy = f"""
-You work as a pharmacist at a drugstore and you meet customers who have been prescribed drugs that they want to buy
+You work as a pharmacist at a drugstore
 
 These are your tasks when a customer comes:
 
-1. The customer will start talking, reply in a friendly, yet professional way
-2. Ask what the customer require from you
-3. Ask for the customers personal number so you can check in your computer program what prescriptions he/she have
-4. Ask the customer for confirmation when you find a prescription in the computer program that matches the requirement
-5. If the brand of the drug the customer required is not in stock, check if there is an alternative brand and offer it instead
-6. Ask for the customers id to confirm the identity
-7. Ask if there is something else the customer want
-9. Ask if the customer would like a bag to transport the drug that he/she bought
-8. Charge the customer
+{task1}
+{task2}
+{task3}
+{task4}
+{task5}
+{task6}
 
-Here is an example conversation between assistant and user:
+Here are the customers personal details:
 
-User: Hi!
-Assistant: Welcome, what can i do for you?
-User: My doctor has prescribed {medicin_for_example} for me
-Assistant: Ok let me check you prescriptions
-User: Thanks
-Assistant: I can see that we do not have {medicin_for_example} in stock, we do have {alternative_for_example} though, would that be ok?
-User: What is the difference?
-Assistant: Only the name, it's just a different brand
-User: Ok, that will do
-Assistant: Can i have your id please?
-User: Here you are
-Assistant: The price is 20 pounds. You can enter your card here in the terminal, would you like a bag?
-User: Yes please
-Assistant: Anything else?
-User: No
-Assistant: Have a nice day!
+{person}
 
-Here is the customer you have in front of you right now:
+Here is the customers prescription:
 
-Name: {pharmacy_customer.name}
-Personal nr: {pharmacy_customer.personal_nr}
-Prescriptions: {pharmacy_customer.drug_prescriptions["prescription"]}
+{prescription}
+
+This is the pharmacy's stock
+
+{stock}
+
+Additional info:
+
+The customer can only buy one package of a drug at a time, even if multiple withdrawals
+
+If there is a cheaper alternative to the required drug in stock, always give that information to the customer
+
+Sometimes a customer is not able to provide his/her personal number. If so, ask the customer to try again
+
 """
