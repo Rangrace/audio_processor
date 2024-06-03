@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Write</title>
+    <link rel="stylesheet" type="text/css" href="../static/main.css">
+    <link rel="stylesheet" type="text/css" href="../static/write.css">
+</head>
+<body id="write">
+<a href="/"><i class="fa-solid fa-house"></i></a>
+<div class="container">
+    <form action="/write" method="POST">
+        <label for="user_content">Enter Text:</label>
+        <input type="text" id="user_content" name="user_content" required>
+        <button type="submit">Submit</button>
+    </form>
+
+</div>
+<p>{{ response }}</p>
+<script src="https://kit.fontawesome.com/41bbf3ae3c.js" crossorigin="anonymous"></script>
+</body>
+</html>

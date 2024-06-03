@@ -1,0 +1,51 @@
+#talk {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.b1 {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    background-color: lightgreen;
+    color: black;
+    box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.5);
+    width: 30%;
+    height: 100px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.b2 {
+    padding: 10px 20px;
+    margin: 0 10px;
+    border: none;
+    background-color: lightcoral;
+    color: black;
+    box-shadow: 2px 2px 2px 2px rgba(0, 0, 0, 0.5);
+    width: 30%;
+    height: 100px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+button:hover {
+    background-color: white;
+}
+
+button:active {
+    background-color: lightgrey;
+}
+
+i {
+    font-size: 100px;
+    margin: 40px;
+}
